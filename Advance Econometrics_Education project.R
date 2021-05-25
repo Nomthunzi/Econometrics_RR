@@ -341,7 +341,11 @@ lipsitz.test(eprobit3.unrestricted)
 pulkrob.chisq(eprobit3.unrestricted, c("gender"))
 #since p-value = 0.1405 we fail to reject H0 and conclude that the model is a good fit
 
-
+#Robustness of the model
+# F test
+# Breusch pagan - Lagrangian test
+# heteroskedacity 
+# multicolinearity
 
 
 
