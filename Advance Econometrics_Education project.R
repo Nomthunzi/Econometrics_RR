@@ -342,10 +342,12 @@ pulkrob.chisq(eprobit3.unrestricted, c("gender"))
 #since p-value = 0.1405 we fail to reject H0 and conclude that the model is a good fit
 
 #Robustness of the model
-# F test
-# Breusch pagan - Lagrangian test
 # heteroskedacity 
-# multicolinearity
+# multicolinearity test for numeric variables
+
+mydata1 <- data.frame(CollegeDistance[,c(3,8,9,10,11)])
+round(cor(mydata1),2)
+#According to the above results, we do not have a problem of multicolinearity among predictors
 
 
 
