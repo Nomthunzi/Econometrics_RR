@@ -350,13 +350,15 @@ round(cor(mydata1),2)
 #According to the above results, we do not have a problem of multicolinearity among predictors
 
 # heteroskedacity 
-h1 <- hetglm(as.factor(education) ~ score + wage + distance + tuition,
-             data =CollegeDistance)
+h1 <- hetglm(as.factor(education) ~ gender + ethnicity + score + fcollege + mcollege + home +
+               unemp+ wage + distance + tuition + income + region + Scorgen,
+             data =CollegeDistance,
+             family = binomial(link = "probit"))
 
 summary(h1)
 
-# According to the result of the LR test for heteroskedasticity, the p-value < 0.05 hence we reject the null hypothesis and conclude that there is problem of heteroskedasticity.
-#the best model would be to rather use heteroskedastic probit model instead of normal model.
+# According to the result of the LR test for heteroskedasticity, the p-value > 0.05 hence we fail to reject the null hypothesis and conclude that there is no problem of heteroskedasticity.
+#hence we can proceed ti interpret the output of the original regression.
 
 
 
