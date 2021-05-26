@@ -342,10 +342,23 @@ pulkrob.chisq(eprobit3.unrestricted, c("gender"))
 #since p-value = 0.1405 we fail to reject H0 and conclude that the model is a good fit
 
 #Robustness of the model
-# F test
-# Breusch pagan - Lagrangian test
+
+# multicolinearity test for numeric variables
+
+mydata1 <- data.frame(CollegeDistance[,c(3,8,9,10,11)])
+round(cor(mydata1),2)
+#According to the above results, we do not have a problem of multicolinearity among predictors
+
 # heteroskedacity 
-# multicolinearity
+h1 <- hetglm(as.factor(education) ~ gender + ethnicity + score + fcollege + mcollege + home +
+               unemp+ wage + distance + tuition + income + region + Scorgen,
+             data =CollegeDistance,
+             family = binomial(link = "probit"))
+
+summary(h1)
+
+# According to the result of the LR test for heteroskedasticity, the p-value > 0.05 hence we fail to reject the null hypothesis and conclude that there is no problem of heteroskedasticity.
+#hence we can proceed ti interpret the output of the original regression.
 
 
 
