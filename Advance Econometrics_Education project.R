@@ -1,4 +1,3 @@
-setwd("C:/Users/Nomthunzi/Desktop/School")
 
 install.packages("AER")
 library("AER")
