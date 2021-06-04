@@ -388,6 +388,7 @@ eprobit3b <- hetglm(as.factor(education) ~ gender + ethnicity + score + fcollege
 summary(eprobit3b)
 coeftest(eprobit3b)
 
+# results interpretation
 # According to the result of the LR test for heteroskedasticity, the p-value < 0.05 hence we reject the null hypothesis and conclude that there is problem of heteroskedasticity..
 #The best in this case would be to consider heteroskedastic probit model results instead of standard probit model.
 # According to the results in the heteroskedastic model, the significant level of most of the predictors changed. none is significant at 0.001 level.
@@ -397,6 +398,13 @@ coeftest(eprobit3b)
 # Furthermore we will compute the marginal effects and compare the heteroskedastic model and the original probit model.
 
 
+#Qaulity publication table results after adding the heteroskedastic probit model as well as the model after multicollinearity check
+stargazer(elogit, eprobit, eprobit1a, eprobit2, eprobit3,eprobit3a,eprobit3b, type ="text")
+
+##Results interpretation
+#The signs of the heteroskedastic model in the table are quite similar to those of  the standard probit final model. i,e The varibales which had positive signs still do in the heteroskedastic model. Same with the variables that had a negative sign.
+#The only difference in the results is that some of the variables became insignificant in the heteroskedastic probit model
+#Hence we omit to interprete their signs in the heteroskedastic model table column.
 
 
 
