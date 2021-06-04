@@ -380,7 +380,14 @@ sjp.corr(mydata,na.deletion = c("listwise", "pairwise"),
 
 
 
+##New probit model without scoregen variable
+eprobit3a <- polr(education ~ gender + ethnicity + score + fcollege + mcollege + home +
+                   unemp + wage2 + distance + tuition + income + region, 
+                 data= CollegeDistance,
+                 method = "probit")
 
+summary(eprobit3a)
+coeftest(eprobit3a)
 
 
 
