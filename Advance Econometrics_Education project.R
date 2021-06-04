@@ -346,18 +346,7 @@ pulkrob.chisq(eprobit3.unrestricted, c("gender"))
 
 mydata1 <- data.frame(CollegeDistance[,c(3,8,9,10,11)])
 round(cor(mydata1),2)
-#According to the above results, we do not have a problem of multicolinearity among predictors
-
-# heteroskedacity 
-h1 <- hetglm(as.factor(education) ~ gender + ethnicity + score + fcollege + mcollege + home +
-               unemp+ wage + distance + tuition + income + region + Scorgen,
-             data =CollegeDistance,
-             family = binomial(link = "probit"))
-
-summary(h1)
-
-# According to the result of the LR test for heteroskedasticity, the p-value > 0.05 hence we fail to reject the null hypothesis and conclude that there is no problem of heteroskedasticity.
-#hence we can proceed ti interpret the output of the original regression.
+#According to the above results, we do not have a problem of multicolinearity among numeric predictors
 
 #Check multicollinearity among all variables in the dataset ( categorical and numerical together).
 
@@ -388,6 +377,26 @@ eprobit3a <- polr(education ~ gender + ethnicity + score + fcollege + mcollege +
 
 summary(eprobit3a)
 coeftest(eprobit3a)
+
+
+# heteroskedacity 
+eprobit3b <- hetglm(as.factor(education) ~ gender + ethnicity + score + fcollege + mcollege + home +
+               unemp+ wage + distance + tuition + income + region,
+             data =CollegeDistance,
+             family = binomial(link = "probit"))
+
+summary(eprobit3b)
+coeftest(eprobit3b)
+
+# According to the result of the LR test for heteroskedasticity, the p-value < 0.05 hence we reject the null hypothesis and conclude that there is problem of heteroskedasticity..
+#The best in this case would be to consider heteroskedastic probit model results instead of standard probit model.
+# According to the results in the heteroskedastic model, the significant level of most of the predictors changed. none is significant at 0.001 level.
+#if we set our significant level at 0.01, only variables ethnicityafam,score and father college would be significant.
+#variables gender,ethnicity hispanic,mother college,unempl,distance tuition and income would be also significant at 0.05
+#variables home, wage and region became inisgnificant.
+# Furthermore we will compute the marginal effects and compare the heteroskedastic model and the original probit model.
+
+
 
 
 
