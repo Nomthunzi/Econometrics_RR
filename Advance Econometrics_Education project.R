@@ -395,7 +395,6 @@ coeftest(eprobit3b)
 #if we set our significant level at 0.01, only variables ethnicityafam,score and father college would be significant.
 #variables gender,ethnicity hispanic,mother college,unempl,distance tuition and income would be also significant at 0.05
 #variables home, wage and region became inisgnificant.
-# Furthermore we will compute the marginal effects and compare the heteroskedastic model and the original probit model.
 
 
 #Qaulity publication table results after adding the heteroskedastic probit model as well as the model after multicollinearity check
