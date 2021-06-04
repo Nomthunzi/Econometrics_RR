@@ -359,6 +359,25 @@ summary(h1)
 # According to the result of the LR test for heteroskedasticity, the p-value > 0.05 hence we fail to reject the null hypothesis and conclude that there is no problem of heteroskedasticity.
 #hence we can proceed ti interpret the output of the original regression.
 
+#Check multicollinearity among all variables in the dataset ( categorical and numerical together).
+
+
+install.packages("sjPlot")
+library("sjPlot")
+
+mydata <- data.frame(CollegeDistance)
+mydata[] <- lapply(mydata,as.integer)
+sjp.corr(mydata,na.deletion = c("listwise", "pairwise"),
+        corr.method = c("pearson"))
+
+#According to the above results, high correlation among predictors was found twice : variable wage and wage2 (its exponential variable) as well as variable gender and Scorgen.
+#This means that only one of the pair can be used in the model.
+#In the original paper, variable wage was not significant and was already excluded from the final model which is correct however
+# the variables gender and Scorgen were both included in the final model though the marginal effects revealed the error.
+# Hence we will run a new model without this variable.
+
+#But generally speaking there is no problem  of multicolinearity among predictors since no value in the table (apart from cases indicated above) is higher than 50 for positive correlation or -50 for negative correlation.
+
 
 
 
