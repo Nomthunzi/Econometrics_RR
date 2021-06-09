@@ -1,0 +1,357 @@
+---
+title: "REPRODUCIBLE RESEARCH PROJECT"
+author: "Nomthunzi Moyo  and Ange Simone Rehema"
+date: "5/27/2021"
+output:
+  html_document: 
+    toc: true
+    toc_float: yes
+    toc_depth: 2
+    theme: united
+    highlight: tango
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+BACKGROUND AND JUSTIFICATION OF INITIAL STUDY
+========================================================
+
+The aim of the original paper was to identify externally induced factors which can affect an individuals’ level of education. For investigation  the study includes Econometric analysis and its tools such 
+as ordered probit model that takes education level as the dependent variable and the factors that influences this variable as predictors.
+
+The analysis was based on a CollegeDistance dataset that is on AER library.
+
+This dataset comes from a survey conducted by the Department of Education in 1980 and it includes students from about 1100 high schools.
+It contains 4739 observations of 14 variables:
+
+- Gender: factor indicating gender (male or female);
+- Ethnicity: factor indicating the race and it takes 3 different values: afam if African American, Hispanic or other;
+- Score: it’s the score obtained in the base year composite test;
+- Fcollege: it’s a dummy variable that reply to the question “Is the father a college graduate?”;
+- Mcollege: it’s the same as previous variable, but it refers to the mother;
+- Home: dummy variable about the ownership of their own home;
+- Urban: factor that reply to the question “Is the school in an urban area?”;
+- Unemp: unemployment rate in 1980;
+- Wage: hourly wage in manufacturing industry in 1980;
+- Distance: distance in 10 miles from 4-year college;
+- Tuition: average 4-year college tuition (in 1000 USD);
+- Education: number of years of education. In particular, the ones with 12 years are all members of senior classes, with 13 are students with vocational degrees, AA degrees are assigned 14 years, BA degrees are assigned 16 years, 17 years to students with some graduate education and finally 18 years to those with a graduate degree;
+- Income: dummy variable with value 1 if the family income is above USD 25000 per year and 0 otherwise;
+- Region: factor indicating the region (West or other).
+
+```{r echo=FALSE}
+library("AER")
+```
+
+```{r}
+data("CollegeDistance")
+str(CollegeDistance)
+```
+
+```{r,warning=FALSE,message=FALSE}
+library("hrbrthemes")
+library("dplyr")
+library("AER")
+library("sandwich")
+library("zoo")
+library("lmtest")
+library("MASS")
+library("pscl")
+library("LogisticDx")
+library("ucminf")
+library("ordinal")
+library("reshape")
+library("generalhoslem")
+library("oglmx")
+library("aod")
+library("brant")
+library("ggplot2")
+library("devtools")
+library("usethis")
+library("dplyr")
+library("stargazer")
+library("erer")
+library("sjPlot")
+library("glmx")
+```
+
+# DATA PREPARATION
+
+To facilitate the analysis, the following data manipulation was made:
+-For the dependent variable education:level 18 has very few observations. To improve the analysis I will add it to level 17. Students with some graduate and those with graduate degree will be combined together. Also variable education was converted to factor and rename levels  - 6 being the higher level of education.
+- A nonlinear variable was created.The variable square wage variable was added to model the effect a differing wages (There might be non linear relationship between education and wage/score).
+A positive effect of wage/score squared means that as people earn more the effect is stronger and vice-versa.
+As people earn more, they have enough for tuition and hence will continue studies.
+-An interaction variable was also created:
+Interaction occurs when the effect of one variable depends on another variable.
+An interaction between gender and scores will check if there exists differences between scores of male and female.
+First, let's change levels of variable gender to a dummy numeric : 0 male and 1 female.
+
+```{r echo=FALSE}
+table(CollegeDistance$education)
+CollegeDistance$education[CollegeDistance$education == 18] <- 17
+table(CollegeDistance$education)
+CollegeDistance$education <-as.factor(CollegeDistance$education)
+levels(CollegeDistance$education) <- c("1","2","3","4","5","6")
+table(CollegeDistance$education)
+
+CollegeDistance <- CollegeDistance %>% 
+  mutate(wage2 = (CollegeDistance$wage ^ 2))
+
+levels(CollegeDistance$gender) <- c("0","1")
+table(CollegeDistance$gender)
+
+CollegeDistance <- CollegeDistance %>% 
+  mutate(Scorgen = (as.numeric(CollegeDistance$score)*as.numeric(CollegeDistance$gender)))
+
+```
+
+Box plot of score per level in both genders
+```{r echo=FALSE}
+bp <- ggplot(CollegeDistance, aes(CollegeDistance$education, CollegeDistance$score)) + 
+  geom_boxplot(aes(fill = CollegeDistance$gender)) +
+  theme_minimal() +
+  theme(legend.position = "top")
+bp
+```
+
+
+In the above plot just as in our transformed data males are denotated as 0 and females as 1. In the 6 
+levels of education we can see that there are a few outliers not described by the plot in the 
+minimum of level 4, 5 and 6. Generally the plot shows that males have box plots that are 
+displaced higher than those of females except at level 1 were it is somewhat at equal level. This 
+shows that in this data set males have a higher minimum score than females in each level except 1.
+
+
+
+Existence of missing observations in all columns was also checked and the result below shows that there was no missing observations in the dataset.
+
+```{r}
+colSums(is.na(CollegeDistance)) %>% 
+  sort()
+```
+
+# MODEL SPECIFICATION
+
+A probit and logit model was build taking education as  dependent variable and the rest as predictors.
+
+We first build a logit model.
+```{r  echo=FALSE}
+elogit <- polr(education ~ ., 
+               data = CollegeDistance,
+               method = "logistic",
+               Hess = TRUE)
+
+summary(elogit)
+coeftest(elogit)
+```
+Before the interpretation of the results,goodness-of-fit tests were conducted:
+-Hosmer-Lemeshow test was used because we have continuous and categorical covariates.The results below shows that the p-value is  >  0.05, hence rejection of the null that there was good specification.
+
+```{r  echo=FALSE}
+logitgof(CollegeDistance$education, fitted(elogit), g = 7, ord = TRUE)
+```
+-The brant test was also used to  if there is a need to use an advanced model.The Omnibus in the result is 0 which means that the proportional odds assumption is violated.
+
+```{r  echo=FALSE}
+brant(elogit)
+```
+
+As per the above results, there was a need to use a more advanced model: ordered probit instead of logit model.
+
+```{r  echo=FALSE}
+eprobit <- polr(education ~ ., 
+                data=CollegeDistance,
+                method = "probit")
+
+summary(eprobit)
+
+coeftest(elogit)
+```
+
+# VARIABLE SELECTION
+According to the above results of the ordered probit model,there were some variables that were not significant at any acceptable significance level (0.01,0.05 or 0.1). 
+
+General to specific method was used to eliminate the unsignificant predictors from the model.
+
+In stage1 we checked if all the insignificant variables are all jointly insignificant.We run the model without insignificant variables: urban,unemp,region,wages,wage2.
+
+```{r  echo=FALSE}
+eprobit1a <- polr(education ~ gender + ethnicity + score + fcollege + mcollege + home + distance + tuition + income + Scorgen,
+                  data=CollegeDistance,
+                  method = "probit")
+
+anova(eprobit, eprobit1a)
+```
+
+According to the above results, all insignificant variables in the model are jointly significant.Therefore Insignificant predictors were dropped  in the way one after another by dropping "the most insignificant" variable from eprobit model that is "wage2".
+
+```{r  echo=FALSE}
+eprobit2 <- polr(education ~ gender + ethnicity + score + fcollege + mcollege + home + urban
+                 + unemp + wage + distance + tuition + income + region + Scorgen, 
+                 data= CollegeDistance,
+                 method = "probit")
+
+summary(eprobit2)
+coeftest(eprobit2)
+```
+
+
+```{r  echo=FALSE}
+eprobit2a <- polr(education ~ gender + ethnicity + score + fcollege + mcollege + home +
+                    unemp + wage + distance + tuition + income + region + Scorgen, 
+                  data= CollegeDistance,
+                  method = "probit")
+```
+
+There are still insignificant variable in eprobit2 model. Therefore,the most  insignificant" predictor was dropped that is "urban".
+
+Let's estimate model eprobit2 without variable "urban" and test joint hypothesis: beta_trade=beta_urban=0 in the general model that is model eprobit.
+
+```{r  echo=FALSE}
+anova(eprobit, eprobit2a)
+```
+
+The result shows that the p-value is greater than 0.05 which means that yes the model is better without variable urban as well.
+
+Hence we rerun the model without variable urban as well.
+
+```{r  echo=FALSE}
+eprobit3 <- polr(education ~ gender + ethnicity + score + fcollege + mcollege + home +
+                   unemp + wage + distance + tuition + income + region + Scorgen, 
+                 data= CollegeDistance,
+                 method = "probit")
+
+summary(eprobit3)
+coeftest(eprobit3)
+```
+All variables are now statistically significant.
+
+# INTERPRETATION OF RESULTS
+
+Please interpret the results of the final model. check how coefficients of probit ordered model are interpreted. I think it is in percentage.
+
+
+# QUALITY PUBLICATION TABLE
+
+The stargazer was used to display the quality publication table.
+
+```{r}
+stargazer(elogit, eprobit, eprobit1a, eprobit2, eprobit3, type ="text")
+```
+
+The stargazer is very good because we can see directly the estimates of the independent variables in the 2 models and compare them. In our example, all the variables, except tuition, distance, region west, Scorgen and wage2, are greater in the ordered logit than all the other ordered probit models. 
+
+This difference is not relevant for our purpose because we are interested in the sign.About the interpretation of parameters, they have no quantitative interpretation but only qualitative, i.e. we can interpret only the sign. Moreover, it's possible to interpret only the very first and last alternative and in our case the probability of the 1st alternative has opposite sign than the estimate, while the probability of thelast alternative has the same sign.
+
+In our case, we have decided to compare the estimates of all the models, including the intermediate ones,but for our purpose we will put attention on ordered logit and the final ordered probit (5).
+In the case of ordered logit, all the variables except distance, tuition, regionwest, wage2 and Scorgen have positive sign so if they increase then the probability of the very first alternative (12 years of education) decreases, while the probability of the last alternative (18 years of education) increases.
+On the other hand, distance, tuition, region west and Scorgen, have negative sign: if they increase, then the probability of 12 years of education increases (same sign), while the probability of 18 years of education decreases (same sign). Also wage2 has negative sign but we cannot consider it so much them since it's a polynomial.
+
+For the final model, the signs are the same for all the variables.All the variables are significant, since we applied the general-to-specific approach.
+
+# MARGINAL EFFECTS 
+
+```{r}
+mea <- ocME(w = eprobit3); mea
+
+mea$out
+
+options(scipen=99)
+
+pR2(elogit)
+pR2(eprobit)
+pR2(eprobit3)
+
+```
+
+From marginal effects (mea$out) of the final model we can see that the p-values of all the independent variables are lower than 0.05, except for regionwest, that has a p-value equal to 0.072 in ME.3 and 0.05 in ME.4. So they are all statistically significant, except regionwest in these 2 cases.
+
+In general, we can say that distance, wage, tuition and regionwest have positive effect on the first 2 levels of education, while starting from level 3 of education their marginal effects become negative and so they affect negatively the levels of education. 
+
+For the rest of variables, they have positive effects  on the level of education.Since the marginal effects of the variable scorgen  are always zero or very low according to the table, we have to exclude it.
+
+RESEARCH IMPROVEMENT
+========================================================
+
+
+A standard probit model was build to explain the existing relationship between Education and the above mentioned predictors in the model however some important tests as such multicollinearity test and heteroskasticity test were ignored.In order to improve the paper we performed these two tests. 
+
+# MULTICOLLINEARITY CHECK
+
+```{r echo=FALSE}
+
+mydata <- data.frame(CollegeDistance)
+mydata[] <- lapply(mydata,as.integer)
+sjp.corr(mydata,na.deletion = c("listwise", "pairwise"),
+         corr.method = c("pearson"))
+```
+According to the above results, high correlation among predictors was found twice : variable wage and wage2 (its exponential variable) as well as variable gender and Scorgen.
+This means that only one of the pair can be used in the model.In the original paper, variable wage was not significant and was already excluded from the final model which is correct however the variables gender and Scorgen were both included in the final model though the marginal effects revealed the error.Hence we will run a new model without this variable.
+
+But generally speaking there is no problem  of multicolinearity among predictors since no value in the table (apart from cases indicated above) is higher than 50 for positive correlation or -50 for negative correlation.
+
+# NEW PROBIT MODEL WITHOUT SCORGEN VARIABLE
+```{r}
+eprobit3a <- polr(education ~ gender + ethnicity + score + fcollege + mcollege + home +
+                   unemp + wage2 + distance + tuition + income + region, 
+                 data= CollegeDistance,
+                 method = "probit")
+
+summary(eprobit3a)
+coeftest(eprobit3a)
+```
+According to the results of the model the variable region becomes insignificant which was not the case in the previous model.
+We consider significant all the estimates that have at least 1 stars. 
+Therefore, in the final ordered probit all the variables are significant except regionwest, since we have applied the 
+general-to-specific approach.
+
+Further more females have higher probability of having low education level than men.
+If the score increases, the probability of having a low level of education decreases. Hence the probability of having the higher education increases as the score increases.
+If the hourly wage decreases, the probability of having low education level increases.
+Student from families with high income have less probability of having a low level of education.
+
+
+# HETEROSKEDASTICITY CHECK
+
+Heteroskedasticity refers to a difference in the variances between groups of Y(dependent variable).
+Heteroskedasticity is a greater problem in ML than in OLS,so it is important to account for nonconstant variance to inference and prediction.
+
+
+```{r}
+eprobit3b <- hetglm(as.factor(education) ~ gender + ethnicity + score + fcollege + mcollege + home + unemp+ wage + distance + tuition + income + region,
+                    data =CollegeDistance,
+                    family = binomial(link = "probit"))
+
+summary(eprobit3b)
+coeftest(eprobit3b)
+```
+
+According to the table above the value of Likelihood-ratio test for heteroskedasticity is less than 0,05.
+The best in this case would be to consider heteroskedastic probit model results instead of the results from the standard probit model.
+
+As per the results above, the significant level of most of the predictors changed as well. None is significant at 0.001 level; So, if we set our significant level at 0.05, only variables ethnicityafam,score and father college would be significant.
+Variables gender,ethnicity hispanic,mother college,unempl,distance tuition and income would be also significant at 0.05.
+Variables home, wage and region became insignificant.
+
+# QUALITY PUBLICATION TABLE
+
+The below table contains the results from all the models built in this study including the heteroskedastic probit model.
+
+As we can see, the tendencies(signs of the significant variables) are the same in the heteroskedastic model as  it was in the standard Probit model.
+
+As stated above, some of the predictors that were significant in the standard probit model became insignificant in the heteroskedastic probit model.
+```{r}
+stargazer(elogit, eprobit, eprobit1a, eprobit2, eprobit3,eprobit3a,eprobit3b, type ="text")
+```
+
+CONCLUSION
+=======================================================
+Apart from the robustness checks,we also improved the paper in the following way:
+Transfer of knowledge through publicly available research on github with source code well commented for other Econometric enthusiasts.
+
+RMarkdown report with embedded code and proper documentation and R studio version.Many reasearchers have a tendency to omit some checks on assumptions which lead them to draw conclusions that are not conclusive.All aims were achieved ie making the study reproducible with clean code, well documented source code in rmarkdown and available on github. In conclusion scorgen has no significant effect on the behaviour of the model as shown by our new probit model. This variable was initially created in the previous study. It corresponds to an interaction between gender and scores.
