@@ -346,10 +346,26 @@ pulkrob.chisq(eprobit3.unrestricted, c("gender"))
 
 mydata1 <- data.frame(CollegeDistance[,c(3,8,9,10,11)])
 round(cor(mydata1),2)
+#According to the above results, we do not have a problem of multicolinearity among predictors
+
+# heteroskedacity 
+h1 <- hetglm(as.factor(education) ~ gender + ethnicity + score + fcollege + mcollege + home +
+               unemp+ wage + distance + tuition + income + region + Scorgen,
+             data =CollegeDistance,
+             family = binomial(link = "probit"))
+
+summary(h1)
+
+# According to the result of the LR test for heteroskedasticity, the p-value > 0.05 hence we fail to reject the null hypothesis and conclude that there is no problem of heteroskedasticity.
+#hence we can proceed ti interpret the output of the original regression.
+
+# multicolinearity test for numeric variables
+
+mydata1 <- data.frame(CollegeDistance[,c(3,8,9,10,11)])
+round(cor(mydata1),2)
 #According to the above results, we do not have a problem of multicolinearity among numeric predictors
 
 #Check multicollinearity among all variables in the dataset ( categorical and numerical together).
-
 
 install.packages("sjPlot")
 library("sjPlot")
@@ -366,6 +382,7 @@ sjp.corr(mydata,na.deletion = c("listwise", "pairwise"),
 # Hence we will run a new model without this variable.
 
 #But generally speaking there is no problem  of multicolinearity among predictors since no value in the table (apart from cases indicated above) is higher than 50 for positive correlation or -50 for negative correlation.
+
 
 
 
