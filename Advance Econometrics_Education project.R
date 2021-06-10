@@ -1,4 +1,3 @@
-setwd("C:/Users/Nomthunzi/Desktop/School")
 
 install.packages("AER")
 library("AER")
@@ -360,7 +359,68 @@ summary(h1)
 # According to the result of the LR test for heteroskedasticity, the p-value > 0.05 hence we fail to reject the null hypothesis and conclude that there is no problem of heteroskedasticity.
 #hence we can proceed ti interpret the output of the original regression.
 
+# multicolinearity test for numeric variables
 
+mydata1 <- data.frame(CollegeDistance[,c(3,8,9,10,11)])
+round(cor(mydata1),2)
+#According to the above results, we do not have a problem of multicolinearity among numeric predictors
+
+#Check multicollinearity among all variables in the dataset ( categorical and numerical together).
+
+install.packages("sjPlot")
+library("sjPlot")
+
+mydata <- data.frame(CollegeDistance)
+mydata[] <- lapply(mydata,as.integer)
+sjp.corr(mydata,na.deletion = c("listwise", "pairwise"),
+        corr.method = c("pearson"))
+
+#According to the above results, high correlation among predictors was found twice : variable wage and wage2 (its exponential variable) as well as variable gender and Scorgen.
+#This means that only one of the pair can be used in the model.
+#In the original paper, variable wage was not significant and was already excluded from the final model which is correct however
+# the variables gender and Scorgen were both included in the final model though the marginal effects revealed the error.
+# Hence we will run a new model without this variable.
+
+#But generally speaking there is no problem  of multicolinearity among predictors since no value in the table (apart from cases indicated above) is higher than 50 for positive correlation or -50 for negative correlation.
+
+
+
+
+##New probit model without scoregen variable
+eprobit3a <- polr(education ~ gender + ethnicity + score + fcollege + mcollege + home +
+                   unemp + wage2 + distance + tuition + income + region, 
+                 data= CollegeDistance,
+                 method = "probit")
+
+summary(eprobit3a)
+coeftest(eprobit3a)
+
+
+# heteroskedacity 
+eprobit3b <- hetglm(as.factor(education) ~ gender + ethnicity + score + fcollege + mcollege + home +
+               unemp+ wage + distance + tuition + income + region,
+             data =CollegeDistance,
+             family = binomial(link = "probit"))
+
+summary(eprobit3b)
+coeftest(eprobit3b)
+
+# results interpretation
+# According to the result of the LR test for heteroskedasticity, the p-value < 0.05 hence we reject the null hypothesis and conclude that there is problem of heteroskedasticity..
+#The best in this case would be to consider heteroskedastic probit model results instead of standard probit model.
+# According to the results in the heteroskedastic model, the significant level of most of the predictors changed. none is significant at 0.001 level.
+#if we set our significant level at 0.01, only variables ethnicityafam,score and father college would be significant.
+#variables gender,ethnicity hispanic,mother college,unempl,distance tuition and income would be also significant at 0.05
+#variables home, wage and region became inisgnificant.
+
+
+#Qaulity publication table results after adding the heteroskedastic probit model as well as the model after multicollinearity check
+stargazer(elogit, eprobit, eprobit1a, eprobit2, eprobit3,eprobit3a,eprobit3b, type ="text")
+
+##Results interpretation
+#The signs of the heteroskedastic model in the table are quite similar to those of  the standard probit final model. i,e The varibales which had positive signs still do in the heteroskedastic model. Same with the variables that had a negative sign.
+#The only difference in the results is that some of the variables became insignificant in the heteroskedastic probit model
+#Hence we omit to interprete their signs in the heteroskedastic model table column.
 
 
 
