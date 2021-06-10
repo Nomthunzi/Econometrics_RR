@@ -232,8 +232,12 @@ coeftest(eprobit3)
 All variables are now statistically significant.
 
 # INTERPRETATION OF RESULTS
+```{r echo=FALSE}
+print(eprobit3)
+```
+Using the above results we conclude from the given coefficients that wage, distance, tuition , incomehigh, regionwest and scorgen have posititive coeeficients.  If the hourly wage decreases, the probability of having low education level increases.  Whenever the distance is high then the probabilty of having low education increases. If the tuition is high then the probabilty of having low education increases. 
 
-Please interpret the results of the final model. check how coefficients of probit ordered model are interpreted. I think it is in percentage.
+Whereas we also see that gender1, ethnicity, fcollege, mcollege and homeyes and unemployment are positive. This shows the inverse conclusions. Someone with high income has a lower probability of having lower education level.  Further more females have higher probability of having low education level than men.  
 
 
 # QUALITY PUBLICATION TABLE
